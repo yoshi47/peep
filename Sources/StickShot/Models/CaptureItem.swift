@@ -69,6 +69,3 @@ final class CaptureItem: Identifiable, ObservableObject {
         opacity = max(Self.minOpacity, min(Self.maxOpacity, newOpacity))
     }
 }
-
-
-

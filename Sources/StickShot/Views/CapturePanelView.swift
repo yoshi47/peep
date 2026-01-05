@@ -149,6 +149,3 @@ struct ScrollWheelZoomModifier: ViewModifier {
             }
     }
 }
-
-
-

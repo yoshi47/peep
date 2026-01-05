@@ -1,5 +1,39 @@
 import AppKit
 
+// MARK: - Constants
+
+private enum SelectionOverlayConstants {
+    static let overlayOpacity: CGFloat = 0.3
+    static let minimumSelectionSize: CGFloat = 5.0
+    static let borderWidth: CGFloat = 2.0
+    static let borderColor: NSColor = .white
+
+    enum SizeLabel {
+        static let minWidth: CGFloat = 60.0
+        static let minHeight: CGFloat = 30.0
+        static let fontSize: CGFloat = 11.0
+        static let fontWeight: NSFont.Weight = .medium
+        static let horizontalPadding: CGFloat = 6.0
+        static let verticalPadding: CGFloat = 3.0
+        static let backgroundOpacity: CGFloat = 0.75
+        static let cornerRadius: CGFloat = 4.0
+        static let offset: CGFloat = 10.0
+        static let minEdgeInset: CGFloat = 10.0
+    }
+
+    enum Instructions {
+        static let text = "Drag to select"
+        static let fontSize: CGFloat = 18.0
+        static let fontWeight: NSFont.Weight = .medium
+        static let horizontalPadding: CGFloat = 16.0
+        static let verticalPadding: CGFloat = 10.0
+        static let backgroundOpacity: CGFloat = 0.6
+        static let cornerRadius: CGFloat = 8.0
+    }
+}
+
+// MARK: - Controller
+
 /// Controller for the selection overlay window
 final class SelectionOverlayWindowController {
     private var windows: [SelectionOverlayNSWindow] = []
@@ -49,7 +83,7 @@ final class SelectionOverlayWindowController {
             
             window.level = .screenSaver
             window.isOpaque = false
-            window.backgroundColor = NSColor.black.withAlphaComponent(0.3)
+            window.backgroundColor = NSColor.black.withAlphaComponent(SelectionOverlayConstants.overlayOpacity)
             window.hasShadow = false
             window.ignoresMouseEvents = false
             window.acceptsMouseMovedEvents = true
@@ -144,7 +178,8 @@ class SelectionOverlayNSWindow: NSWindow {
         
         overlayView?.updateSelection(from: startPoint, to: event.locationInWindow)
         
-        if let rect = overlayView?.selectionRect, rect.width > 5, rect.height > 5 {
+        let minSize = SelectionOverlayConstants.minimumSelectionSize
+        if let rect = overlayView?.selectionRect, rect.width > minSize, rect.height > minSize {
             NSLog("[SelectionOverlay] Selection complete, rect: \(rect)")
             onSelectionComplete?(rect)
         } else {
@@ -197,66 +232,82 @@ class SelectionOverlayNSView: NSView {
     
     override func draw(_ dirtyRect: NSRect) {
         guard let rect = selectionRect, rect.width > 0, rect.height > 0 else {
-            // Draw instructions
             drawInstructions()
             return
         }
-        
-        // Clear selection area (make it transparent)
-        if let context = NSGraphicsContext.current?.cgContext {
-            context.setBlendMode(.copy)
-            context.setFillColor(NSColor.clear.cgColor)
-            context.fill(rect)
-            context.setBlendMode(.normal)
-        }
-        
-        // Draw white border around selection
-        NSColor.white.setStroke()
-        let path = NSBezierPath(rect: rect)
-        path.lineWidth = 2
-        path.stroke()
-        
-        // Draw size label
-        if rect.width > 60 && rect.height > 30 {
-            let label = "\(Int(rect.width)) × \(Int(rect.height))"
-            let font = NSFont.monospacedSystemFont(ofSize: 11, weight: .medium)
-            let attrs: [NSAttributedString.Key: Any] = [
-                .font: font,
-                .foregroundColor: NSColor.white
-            ]
-            
-            let size = (label as NSString).size(withAttributes: attrs)
-            let labelX = rect.midX - size.width / 2
-            let labelY = max(rect.minY - size.height - 10, 10)
-            
-            // Background
-            let bgRect = NSRect(x: labelX - 6, y: labelY - 3, width: size.width + 12, height: size.height + 6)
-            NSColor.black.withAlphaComponent(0.75).setFill()
-            NSBezierPath(roundedRect: bgRect, xRadius: 4, yRadius: 4).fill()
-            
-            // Text
-            (label as NSString).draw(at: NSPoint(x: labelX, y: labelY), withAttributes: attrs)
-        }
+
+        clearSelectionArea(rect)
+        drawSelectionBorder(rect)
+        drawSizeLabel(for: rect)
     }
-    
-    private func drawInstructions() {
-        let text = "Drag to select"
-        let font = NSFont.systemFont(ofSize: 18, weight: .medium)
+
+    // MARK: - Drawing Helpers
+
+    private func clearSelectionArea(_ rect: CGRect) {
+        guard let context = NSGraphicsContext.current?.cgContext else { return }
+        context.setBlendMode(.copy)
+        context.setFillColor(NSColor.clear.cgColor)
+        context.fill(rect)
+        context.setBlendMode(.normal)
+    }
+
+    private func drawSelectionBorder(_ rect: CGRect) {
+        SelectionOverlayConstants.borderColor.setStroke()
+        let path = NSBezierPath(rect: rect)
+        path.lineWidth = SelectionOverlayConstants.borderWidth
+        path.stroke()
+    }
+
+    private func drawSizeLabel(for rect: CGRect) {
+        typealias Config = SelectionOverlayConstants.SizeLabel
+
+        guard rect.width > Config.minWidth, rect.height > Config.minHeight else { return }
+
+        let label = "\(Int(rect.width)) × \(Int(rect.height))"
+        let font = NSFont.monospacedSystemFont(ofSize: Config.fontSize, weight: Config.fontWeight)
         let attrs: [NSAttributedString.Key: Any] = [
             .font: font,
             .foregroundColor: NSColor.white
         ]
-        
-        let size = (text as NSString).size(withAttributes: attrs)
+
+        let size = (label as NSString).size(withAttributes: attrs)
+        let labelX = rect.midX - size.width / 2
+        let labelY = max(rect.minY - size.height - Config.offset, Config.minEdgeInset)
+
+        let bgRect = NSRect(
+            x: labelX - Config.horizontalPadding,
+            y: labelY - Config.verticalPadding,
+            width: size.width + Config.horizontalPadding * 2,
+            height: size.height + Config.verticalPadding * 2
+        )
+        NSColor.black.withAlphaComponent(Config.backgroundOpacity).setFill()
+        NSBezierPath(roundedRect: bgRect, xRadius: Config.cornerRadius, yRadius: Config.cornerRadius).fill()
+
+        (label as NSString).draw(at: NSPoint(x: labelX, y: labelY), withAttributes: attrs)
+    }
+
+    private func drawInstructions() {
+        typealias Config = SelectionOverlayConstants.Instructions
+
+        let font = NSFont.systemFont(ofSize: Config.fontSize, weight: Config.fontWeight)
+        let attrs: [NSAttributedString.Key: Any] = [
+            .font: font,
+            .foregroundColor: NSColor.white
+        ]
+
+        let size = (Config.text as NSString).size(withAttributes: attrs)
         let x = bounds.midX - size.width / 2
         let y = bounds.midY - size.height / 2
-        
-        // Background
-        let bgRect = NSRect(x: x - 16, y: y - 10, width: size.width + 32, height: size.height + 20)
-        NSColor.black.withAlphaComponent(0.6).setFill()
-        NSBezierPath(roundedRect: bgRect, xRadius: 8, yRadius: 8).fill()
-        
-        // Text
-        (text as NSString).draw(at: NSPoint(x: x, y: y), withAttributes: attrs)
+
+        let bgRect = NSRect(
+            x: x - Config.horizontalPadding,
+            y: y - Config.verticalPadding,
+            width: size.width + Config.horizontalPadding * 2,
+            height: size.height + Config.verticalPadding * 2
+        )
+        NSColor.black.withAlphaComponent(Config.backgroundOpacity).setFill()
+        NSBezierPath(roundedRect: bgRect, xRadius: Config.cornerRadius, yRadius: Config.cornerRadius).fill()
+
+        (Config.text as NSString).draw(at: NSPoint(x: x, y: y), withAttributes: attrs)
     }
 }

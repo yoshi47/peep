@@ -70,6 +70,3 @@ Sources/StickShot/
 ## ライセンス
 
 MIT License
-
-
-
