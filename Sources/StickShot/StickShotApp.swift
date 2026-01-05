@@ -1,5 +1,6 @@
 import SwiftUI
 import AppKit
+import ServiceManagement
 
 @main
 struct StickShotApp: App {
@@ -44,7 +45,18 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         menu.addItem(captureItem)
         
         menu.addItem(NSMenuItem.separator())
-        
+
+        let launchAtLoginItem = NSMenuItem(
+            title: "Launch at Login",
+            action: #selector(toggleLaunchAtLogin),
+            keyEquivalent: ""
+        )
+        launchAtLoginItem.target = self
+        launchAtLoginItem.state = SMAppService.mainApp.status == .enabled ? .on : .off
+        menu.addItem(launchAtLoginItem)
+
+        menu.addItem(NSMenuItem.separator())
+
         let closeAllItem = NSMenuItem(title: "Close All Captures", action: #selector(closeAllCaptures), keyEquivalent: "")
         closeAllItem.target = self
         menu.addItem(closeAllItem)
@@ -68,5 +80,19 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     
     @objc private func quitApp() {
         NSApplication.shared.terminate(nil)
+    }
+
+    @objc private func toggleLaunchAtLogin(_ sender: NSMenuItem) {
+        do {
+            if SMAppService.mainApp.status == .enabled {
+                try SMAppService.mainApp.unregister()
+                sender.state = .off
+            } else {
+                try SMAppService.mainApp.register()
+                sender.state = .on
+            }
+        } catch {
+            NSLog("[StickShot] Failed to toggle launch at login: \(error)")
+        }
     }
 }

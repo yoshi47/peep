@@ -73,6 +73,13 @@ final class CapturePanelWindowController {
             self.item.adjustScale(by: scaleDelta)
             self.updateWindowSize()
         }
+
+        // Set up Cmd+scroll wheel opacity
+        panel.onScrollWheelOpacity = { [weak self] delta in
+            guard let self = self else { return }
+            let opacityDelta = delta * 0.05
+            self.item.adjustOpacity(by: opacityDelta)
+        }
         
         self.window = panel
         self.hostingView = hosting
@@ -145,14 +152,20 @@ final class CapturePanelWindowController {
 class CapturePanelNSPanel: NSPanel {
     var shouldCloseHandler: (() -> Void)?
     var onScrollWheel: ((CGFloat) -> Void)?
+    var onScrollWheelOpacity: ((CGFloat) -> Void)?
     
     override var canBecomeKey: Bool { true }
     override var canBecomeMain: Bool { false }
     
     override func scrollWheel(with event: NSEvent) {
-        // Use deltaY for zoom
         let delta = event.deltaY
-        if abs(delta) > 0.1 {
+        guard abs(delta) > 0.1 else { return }
+
+        if event.modifierFlags.contains(.command) {
+            // Cmd+Scroll: opacity adjustment
+            onScrollWheelOpacity?(delta)
+        } else {
+            // Scroll: zoom adjustment
             onScrollWheel?(delta)
         }
     }
