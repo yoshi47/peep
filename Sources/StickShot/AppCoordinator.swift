@@ -74,12 +74,14 @@ final class AppCoordinator {
     /// Perform the actual capture
     private func performCapture(rect: CGRect, screen: NSScreen) {
         NSLog("[AppCoordinator] performCapture called with rect: \(rect)")
-        
+
         // Close selection overlay
         selectionOverlayController?.close()
         selectionOverlayController = nil
-        
-        Task {
+
+        // Wait for overlay to disappear before capturing
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+            Task {
             do {
                 NSLog("[AppCoordinator] Starting capture...")
                 let image = try await CaptureService.shared.captureRegion(rect: rect, screen: screen)
@@ -108,6 +110,7 @@ final class AppCoordinator {
             
             await MainActor.run {
                 self.isCapturing = false
+            }
             }
         }
     }
