@@ -158,6 +158,11 @@ class CapturePanelNSPanel: NSPanel {
     override var canBecomeMain: Bool { false }
     
     override func scrollWheel(with event: NSEvent) {
+        // Ignore momentum scroll events - only respond to actual user scrolling
+        if event.momentumPhase != [] && event.momentumPhase != .began {
+            return
+        }
+        
         let delta = event.deltaY
         guard abs(delta) > 0.1 else { return }
 
