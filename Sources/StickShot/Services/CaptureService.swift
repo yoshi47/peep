@@ -67,7 +67,8 @@ final class CaptureService: NSObject {
         
         print("[CaptureService] Using display: \(display.displayID)")
         
-        let scaleFactor = screen.backingScaleFactor
+        // Always capture at 2x resolution minimum for better quality on non-Retina displays
+        let scaleFactor = max(screen.backingScaleFactor, 2.0)
         let screenFrame = screen.frame
         
         // Convert from global screen coordinates to display-local coordinates
