@@ -74,10 +74,10 @@ final class CapturePanelWindowController {
             self.updateWindowSize()
         }
 
-        // Set up Cmd+scroll wheel opacity
+        // Set up Cmd+scroll wheel opacity (5% steps)
         panel.onScrollWheelOpacity = { [weak self] delta in
             guard let self = self else { return }
-            let opacityDelta = delta * 0.05
+            let opacityDelta: CGFloat = delta > 0 ? 0.05 : -0.05
             self.item.adjustOpacity(by: opacityDelta)
         }
         
