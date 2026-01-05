@@ -70,9 +70,15 @@ struct CapturePanelView: View {
             VStack(spacing: 8) {
                 // Scale slider
                 HStack(spacing: 8) {
-                    Image(systemName: "minus.magnifyingglass")
-                        .font(.system(size: 12))
-                        .foregroundColor(.white)
+                    Button(action: {
+                        item.adjustScale(by: -0.1)
+                        onScaleChange?(item.scale)
+                    }) {
+                        Image(systemName: "minus.magnifyingglass")
+                            .font(.system(size: 12))
+                            .foregroundColor(.white)
+                    }
+                    .buttonStyle(.plain)
                     
                     Slider(
                         value: Binding(
@@ -86,9 +92,15 @@ struct CapturePanelView: View {
                     )
                     .frame(width: 100)
                     
-                    Image(systemName: "plus.magnifyingglass")
-                        .font(.system(size: 12))
-                        .foregroundColor(.white)
+                    Button(action: {
+                        item.adjustScale(by: 0.1)
+                        onScaleChange?(item.scale)
+                    }) {
+                        Image(systemName: "plus.magnifyingglass")
+                            .font(.system(size: 12))
+                            .foregroundColor(.white)
+                    }
+                    .buttonStyle(.plain)
                     
                     Text("\(Int(item.scale * 100))%")
                         .font(.system(size: 11, weight: .medium, design: .monospaced))
@@ -98,9 +110,15 @@ struct CapturePanelView: View {
                 
                 // Opacity slider
                 HStack(spacing: 8) {
-                    Image(systemName: "circle.lefthalf.filled")
-                        .font(.system(size: 12))
-                        .foregroundColor(.white)
+                    Button(action: {
+                        item.adjustOpacity(by: -0.1)
+                        onOpacityChange?(item.opacity)
+                    }) {
+                        Image(systemName: "circle.lefthalf.filled")
+                            .font(.system(size: 12))
+                            .foregroundColor(.white)
+                    }
+                    .buttonStyle(.plain)
                     
                     Slider(
                         value: Binding(
@@ -114,9 +132,15 @@ struct CapturePanelView: View {
                     )
                     .frame(width: 100)
                     
-                    Image(systemName: "circle.fill")
-                        .font(.system(size: 12))
-                        .foregroundColor(.white)
+                    Button(action: {
+                        item.adjustOpacity(by: 0.1)
+                        onOpacityChange?(item.opacity)
+                    }) {
+                        Image(systemName: "circle.fill")
+                            .font(.system(size: 12))
+                            .foregroundColor(.white)
+                    }
+                    .buttonStyle(.plain)
                     
                     Text("\(Int(item.opacity * 100))%")
                         .font(.system(size: 11, weight: .medium, design: .monospaced))
