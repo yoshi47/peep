@@ -1,4 +1,5 @@
 import AppKit
+import CoreGraphics
 
 // MARK: - Constants
 
@@ -37,20 +38,29 @@ private enum SelectionOverlayConstants {
 /// Controller for the selection overlay window
 final class SelectionOverlayWindowController {
     private var windows: [SelectionOverlayNSWindow] = []
-    
+    private var keyEventMonitor: Any?
+
+    private var eventTap: CFMachPort?
+    private var eventTapRunLoopSource: CFRunLoopSource?
+    private let escapeKeyCode: Int64 = 53
+
     var onSelectionComplete: ((CGRect, NSScreen) -> Void)?
     var onCancel: (() -> Void)?
+
+    deinit {
+        removeKeyEventMonitor()
+        stopEventTap()
+    }
     
     /// Show selection overlay on all screens
     func show() {
         close()
-        
-        NSLog("[SelectionOverlay] Showing overlays for \(NSScreen.screens.count) screens")
-        
+
+        installKeyEventMonitor()
+        startEventTapIfPossible()
+
         // Create overlay for each screen
-        for (index, screen) in NSScreen.screens.enumerated() {
-            NSLog("[SelectionOverlay] Screen \(index): frame=\(screen.frame)")
-            
+        for screen in NSScreen.screens {
             let window = SelectionOverlayNSWindow(
                 contentRect: screen.frame,
                 styleMask: [.borderless],
@@ -72,13 +82,11 @@ final class SelectionOverlayWindowController {
                     height: rect.height
                 )
                 
-                NSLog("[SelectionOverlay] Converted rect \(rect) to screen rect \(screenRect) for screen at \(screenFrame)")
                 self.onSelectionComplete?(screenRect, screen)
                 self.close()
             }
             window.onCancel = { [weak self] in
-                self?.onCancel?()
-                self?.close()
+                self?.cancel()
             }
             
             window.level = .screenSaver
@@ -97,9 +105,6 @@ final class SelectionOverlayWindowController {
             let overlayView = SelectionOverlayNSView(frame: viewFrame)
             window.contentView = overlayView
             window.overlayView = overlayView
-            
-            NSLog("[SelectionOverlay] Created window at \(window.frame) with view frame \(viewFrame)")
-            
             windows.append(window)
         }
         
@@ -109,29 +114,107 @@ final class SelectionOverlayWindowController {
         }
         
         // Make sure the app is active
-        NSApp.activate(ignoringOtherApps: true)
-        
-        // Make the first window key
-        if let firstWindow = windows.first {
-            firstWindow.makeKey()
-            if let view = firstWindow.overlayView {
-                firstWindow.makeFirstResponder(view)
-            }
-        }
-        
-        // Force activation
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
-            NSApp.activate(ignoringOtherApps: true)
-            self.windows.first?.makeKey()
+        NSRunningApplication.current.activate(options: [.activateIgnoringOtherApps, .activateAllWindows])
+
+        // Prefer focusing the overlay on the screen the mouse is currently on
+        let mouse = NSEvent.mouseLocation
+        focusWindow(at: mouse)
+
+        // Force activation (some setups need a second nudge)
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.05) {
+            NSRunningApplication.current.activate(options: [.activateIgnoringOtherApps, .activateAllWindows])
         }
     }
     
     /// Close all overlay windows
     func close() {
+        removeKeyEventMonitor()
+        stopEventTap()
         for window in windows {
             window.orderOut(nil)
         }
         windows.removeAll()
+    }
+
+    private func focusWindow(at globalMouseLocation: NSPoint) {
+        let focusWindow = windows.first(where: { $0.frame.contains(globalMouseLocation) }) ?? windows.first
+        guard let focusWindow else { return }
+        focusWindow.makeKey()
+        if let view = focusWindow.overlayView {
+            focusWindow.makeFirstResponder(view)
+        }
+    }
+
+    private func cancel() {
+        onCancel?()
+        close()
+    }
+
+    private func installKeyEventMonitor() {
+        guard keyEventMonitor == nil else { return }
+        keyEventMonitor = NSEvent.addLocalMonitorForEvents(matching: [.keyDown]) { [weak self] event in
+            guard let self else { return event }
+            if event.keyCode == UInt16(self.escapeKeyCode) {
+                self.cancel()
+                return nil
+            }
+            return event
+        }
+    }
+
+    private func removeKeyEventMonitor() {
+        guard let keyEventMonitor else { return }
+        NSEvent.removeMonitor(keyEventMonitor)
+        self.keyEventMonitor = nil
+    }
+
+    private func startEventTapIfPossible() {
+        guard eventTap == nil else { return }
+
+        let mask = (1 << CGEventType.keyDown.rawValue)
+        let callback: CGEventTapCallBack = { _, type, event, userInfo in
+            guard type == .keyDown else { return Unmanaged.passUnretained(event) }
+
+            let keyCode = event.getIntegerValueField(.keyboardEventKeycode)
+            if keyCode == 53, let userInfo {
+                let controller = Unmanaged<SelectionOverlayWindowController>.fromOpaque(userInfo).takeUnretainedValue()
+                DispatchQueue.main.async {
+                    controller.cancel()
+                }
+                return nil
+            }
+
+            return Unmanaged.passUnretained(event)
+        }
+
+        let tap = CGEvent.tapCreate(
+            tap: .cgSessionEventTap,
+            place: .headInsertEventTap,
+            options: .defaultTap,
+            eventsOfInterest: CGEventMask(mask),
+            callback: callback,
+            userInfo: Unmanaged.passUnretained(self).toOpaque()
+        )
+
+        guard let tap else {
+            NSLog("[SelectionOverlay] Failed to create CGEventTap (Accessibility permission may be required); falling back to local monitor")
+            return
+        }
+
+        let source = CFMachPortCreateRunLoopSource(kCFAllocatorDefault, tap, 0)
+        CFRunLoopAddSource(CFRunLoopGetMain(), source, .commonModes)
+        CGEvent.tapEnable(tap: tap, enable: true)
+
+        eventTap = tap
+        eventTapRunLoopSource = source
+    }
+
+    private func stopEventTap() {
+        if let source = eventTapRunLoopSource {
+            CFRunLoopRemoveSource(CFRunLoopGetMain(), source, .commonModes)
+        }
+        eventTapRunLoopSource = nil
+        eventTap = nil
     }
 }
 
@@ -157,7 +240,6 @@ class SelectionOverlayNSWindow: NSWindow {
     }
     
     override func mouseDown(with event: NSEvent) {
-        print("[SelectionOverlay] mouseDown at: \(event.locationInWindow)")
         isDragging = true
         startPoint = event.locationInWindow
         overlayView?.startSelection(at: startPoint)
@@ -166,7 +248,6 @@ class SelectionOverlayNSWindow: NSWindow {
     
     override func mouseDragged(with event: NSEvent) {
         guard isDragging else { return }
-        print("[SelectionOverlay] mouseDragged to: \(event.locationInWindow)")
         overlayView?.updateSelection(from: startPoint, to: event.locationInWindow)
         overlayView?.updateMouseLocation(event.locationInWindow)
     }
@@ -183,10 +264,8 @@ class SelectionOverlayNSWindow: NSWindow {
         
         let minSize = SelectionOverlayConstants.minimumSelectionSize
         if let rect = overlayView?.selectionRect, rect.width > minSize, rect.height > minSize {
-            NSLog("[SelectionOverlay] Selection complete, rect: \(rect)")
             onSelectionComplete?(rect)
         } else {
-            NSLog("[SelectionOverlay] Selection too small or cancelled")
             onCancel?()
         }
     }
@@ -246,10 +325,9 @@ class SelectionOverlayNSView: NSView {
     override var acceptsFirstResponder: Bool { true }
     
     override func becomeFirstResponder() -> Bool {
-        NSLog("[SelectionOverlayNSView] becomeFirstResponder")
         return true
     }
-    
+
     // Accept first mouse event without needing to click to focus
     override func acceptsFirstMouse(for event: NSEvent?) -> Bool {
         return true
@@ -271,7 +349,6 @@ class SelectionOverlayNSView: NSView {
     }
     
     override func draw(_ dirtyRect: NSRect) {
-        // Draw crosshair cursor
         drawCrosshair()
         
         guard let rect = selectionRect, rect.width > 0, rect.height > 0 else {
