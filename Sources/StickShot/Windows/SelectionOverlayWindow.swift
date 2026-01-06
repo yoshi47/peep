@@ -161,12 +161,14 @@ class SelectionOverlayNSWindow: NSWindow {
         isDragging = true
         startPoint = event.locationInWindow
         overlayView?.startSelection(at: startPoint)
+        overlayView?.updateMouseLocation(event.locationInWindow)
     }
     
     override func mouseDragged(with event: NSEvent) {
         guard isDragging else { return }
         print("[SelectionOverlay] mouseDragged to: \(event.locationInWindow)")
         overlayView?.updateSelection(from: startPoint, to: event.locationInWindow)
+        overlayView?.updateMouseLocation(event.locationInWindow)
     }
     
     override func mouseUp(with event: NSEvent) {
@@ -177,6 +179,7 @@ class SelectionOverlayNSWindow: NSWindow {
         isDragging = false
         
         overlayView?.updateSelection(from: startPoint, to: event.locationInWindow)
+        overlayView?.updateMouseLocation(event.locationInWindow)
         
         let minSize = SelectionOverlayConstants.minimumSelectionSize
         if let rect = overlayView?.selectionRect, rect.width > minSize, rect.height > minSize {
@@ -192,15 +195,52 @@ class SelectionOverlayNSWindow: NSWindow {
 /// Custom NSView for drawing selection overlay
 class SelectionOverlayNSView: NSView {
     var selectionRect: CGRect?
+    private var trackingArea: NSTrackingArea?
+    private var currentMouseLocation: NSPoint?
     
     override init(frame frameRect: NSRect) {
         super.init(frame: frameRect)
         wantsLayer = true
         layer?.backgroundColor = NSColor.clear.cgColor
+        setupTrackingArea()
     }
     
     required init?(coder: NSCoder) {
         fatalError("init(coder:) has not been implemented")
+    }
+    
+    private func setupTrackingArea() {
+        let options: NSTrackingArea.Options = [.mouseEnteredAndExited, .mouseMoved, .activeAlways, .inVisibleRect]
+        trackingArea = NSTrackingArea(rect: bounds, options: options, owner: self, userInfo: nil)
+        addTrackingArea(trackingArea!)
+    }
+    
+    override func updateTrackingAreas() {
+        super.updateTrackingAreas()
+        if let existing = trackingArea {
+            removeTrackingArea(existing)
+        }
+        setupTrackingArea()
+    }
+    
+    override func mouseEntered(with event: NSEvent) {
+        currentMouseLocation = event.locationInWindow
+        setNeedsDisplay(bounds)
+    }
+    
+    override func mouseExited(with event: NSEvent) {
+        currentMouseLocation = nil
+        setNeedsDisplay(bounds)
+    }
+    
+    override func mouseMoved(with event: NSEvent) {
+        currentMouseLocation = event.locationInWindow
+        setNeedsDisplay(bounds)
+    }
+    
+    func updateMouseLocation(_ location: NSPoint) {
+        currentMouseLocation = location
+        setNeedsDisplay(bounds)
     }
     
     override var acceptsFirstResponder: Bool { true }
@@ -231,6 +271,9 @@ class SelectionOverlayNSView: NSView {
     }
     
     override func draw(_ dirtyRect: NSRect) {
+        // Draw crosshair cursor
+        drawCrosshair()
+        
         guard let rect = selectionRect, rect.width > 0, rect.height > 0 else {
             drawInstructions()
             return
@@ -239,6 +282,36 @@ class SelectionOverlayNSView: NSView {
         clearSelectionArea(rect)
         drawSelectionBorder(rect)
         drawSizeLabel(for: rect)
+    }
+    
+    private func drawCrosshair() {
+        guard let location = currentMouseLocation else { return }
+        
+        let crosshairSize: CGFloat = 10
+        
+        // Draw black outline
+        NSColor.black.setStroke()
+        drawCrosshairLines(at: location, size: crosshairSize, lineWidth: 2.0)
+        
+        // Draw white center
+        NSColor.white.setStroke()
+        drawCrosshairLines(at: location, size: crosshairSize, lineWidth: 1.0)
+    }
+    
+    private func drawCrosshairLines(at location: NSPoint, size: CGFloat, lineWidth: CGFloat) {
+        // Horizontal line
+        let hPath = NSBezierPath()
+        hPath.move(to: NSPoint(x: location.x - size, y: location.y))
+        hPath.line(to: NSPoint(x: location.x + size, y: location.y))
+        hPath.lineWidth = lineWidth
+        hPath.stroke()
+        
+        // Vertical line
+        let vPath = NSBezierPath()
+        vPath.move(to: NSPoint(x: location.x, y: location.y - size))
+        vPath.line(to: NSPoint(x: location.x, y: location.y + size))
+        vPath.lineWidth = lineWidth
+        vPath.stroke()
     }
 
     // MARK: - Drawing Helpers

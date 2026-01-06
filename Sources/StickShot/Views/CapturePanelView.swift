@@ -5,7 +5,6 @@ import AppKit
 struct CapturePanelView: View {
     @ObservedObject var item: CaptureItem
     @State private var isHovering = false
-    @State private var showControls = false
     
     var onClose: (() -> Void)?
     var onScaleChange: ((CGFloat) -> Void)?
@@ -23,7 +22,7 @@ struct CapturePanelView: View {
                 )
             
             // Controls overlay (shown on hover)
-            if isHovering || showControls {
+            if isHovering {
                 controlsOverlay
             }
         }
@@ -156,20 +155,5 @@ struct CapturePanelView: View {
             )
             .padding(8)
         }
-    }
-}
-
-/// View modifier for scroll wheel zoom
-struct ScrollWheelZoomModifier: ViewModifier {
-    @Binding var scale: CGFloat
-    let minScale: CGFloat
-    let maxScale: CGFloat
-    var onScaleChange: ((CGFloat) -> Void)?
-    
-    func body(content: Content) -> some View {
-        content
-            .onReceive(NotificationCenter.default.publisher(for: NSView.boundsDidChangeNotification)) { _ in
-                // Handle scroll wheel events through NSView
-            }
     }
 }
