@@ -6,7 +6,7 @@ import Combine
 final class CapturePanelWindowController {
     let item: CaptureItem
     private var window: NSPanel?
-    private var hostingView: NSHostingView<CapturePanelView>?
+    private var hostingView: CapturePanelHostingView<CapturePanelView>?
     private var cancellables = Set<AnyCancellable>()
     private var isClosed = false
     
@@ -56,9 +56,17 @@ final class CapturePanelWindowController {
             }
         )
         
-        let hosting = NSHostingView(rootView: view)
+        let hosting = CapturePanelHostingView(rootView: view)
         hosting.frame = panel.contentView?.bounds ?? .zero
         hosting.autoresizingMask = [.width, .height]
+        hosting.onRightClick = { [weak panel] event in
+            guard let panel = panel else { return }
+            let menu = NSMenu()
+            let saveItem = NSMenuItem(title: "Save Image...", action: #selector(panel.saveImageAction), keyEquivalent: "")
+            saveItem.target = panel
+            menu.addItem(saveItem)
+            NSMenu.popUpContextMenu(menu, with: event, for: hosting)
+        }
         
         panel.contentView = hosting
         panel.shouldCloseHandler = { [weak self] in
@@ -79,6 +87,11 @@ final class CapturePanelWindowController {
             guard let self = self else { return }
             let opacityDelta: CGFloat = delta > 0 ? 0.05 : -0.05
             self.item.adjustOpacity(by: opacityDelta)
+        }
+        
+        // Set up right-click save
+        panel.onSaveImage = { [weak self] in
+            self?.saveImage()
         }
         
         self.window = panel
@@ -124,6 +137,58 @@ final class CapturePanelWindowController {
         window.setFrame(frame, display: true, animate: false)
     }
     
+    /// Save the captured image to a file
+    private func saveImage() {
+        NSLog("[CapturePanelWindowController] saveImage called")
+        
+        let savePanel = NSSavePanel()
+        savePanel.allowedContentTypes = [.png]
+        savePanel.canCreateDirectories = true
+        
+        // Generate default filename with timestamp
+        let formatter = DateFormatter()
+        formatter.dateFormat = "yyyy-MM-dd_HH-mm-ss"
+        let timestamp = formatter.string(from: item.capturedAt)
+        savePanel.nameFieldStringValue = "StickShot_\(timestamp).png"
+        
+        // Use beginSheetModal if we have a window, otherwise use begin
+        if let window = self.window {
+            NSLog("[CapturePanelWindowController] Showing save panel as sheet")
+            savePanel.beginSheetModal(for: window) { [weak self] response in
+                self?.handleSaveResponse(response: response, url: savePanel.url)
+            }
+        } else {
+            NSLog("[CapturePanelWindowController] Showing save panel with begin")
+            savePanel.begin { [weak self] response in
+                self?.handleSaveResponse(response: response, url: savePanel.url)
+            }
+        }
+    }
+    
+    private func handleSaveResponse(response: NSApplication.ModalResponse, url: URL?) {
+        NSLog("[CapturePanelWindowController] Save panel response: \(response.rawValue)")
+        
+        guard response == .OK, let url = url else {
+            NSLog("[CapturePanelWindowController] Save cancelled or no URL")
+            return
+        }
+        
+        // Convert NSImage to PNG data
+        guard let tiffData = item.image.tiffRepresentation,
+              let bitmap = NSBitmapImageRep(data: tiffData),
+              let pngData = bitmap.representation(using: .png, properties: [:]) else {
+            NSLog("[CapturePanelWindowController] Failed to convert image to PNG")
+            return
+        }
+        
+        do {
+            try pngData.write(to: url)
+            NSLog("[CapturePanelWindowController] Image saved to \(url.path)")
+        } catch {
+            NSLog("[CapturePanelWindowController] Failed to save image: \(error)")
+        }
+    }
+    
     private func setupObservers() {
         // Observe opacity changes
         item.$opacity
@@ -153,6 +218,7 @@ class CapturePanelNSPanel: NSPanel {
     var shouldCloseHandler: (() -> Void)?
     var onScrollWheel: ((CGFloat) -> Void)?
     var onScrollWheelOpacity: ((CGFloat) -> Void)?
+    var onSaveImage: (() -> Void)?
     
     override var canBecomeKey: Bool { true }
     override var canBecomeMain: Bool { false }
@@ -191,6 +257,25 @@ class CapturePanelNSPanel: NSPanel {
             return
         }
         super.mouseDown(with: event)
+    }
+    
+    @objc func saveImageAction() {
+        NSLog("[CapturePanelNSPanel] saveImageAction called")
+        onSaveImage?()
+    }
+}
+
+/// Custom NSHostingView that handles right-click events
+class CapturePanelHostingView<Content: View>: NSHostingView<Content> {
+    var onRightClick: ((NSEvent) -> Void)?
+    
+    override func rightMouseDown(with event: NSEvent) {
+        NSLog("[CapturePanelHostingView] rightMouseDown")
+        if let handler = onRightClick {
+            handler(event)
+        } else {
+            super.rightMouseDown(with: event)
+        }
     }
 }
 
