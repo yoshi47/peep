@@ -19,13 +19,6 @@ final class AppCoordinator {
                 self?.startCapture()
             }
         }
-
-        Task {
-            let hasPermission = await CaptureService.shared.checkPermission()
-            if !hasPermission {
-                await MainActor.run { self.showPermissionAlert() }
-            }
-        }
     }
 
     /// Start the capture process (show selection overlay)
@@ -89,22 +82,6 @@ final class AppCoordinator {
                 await MainActor.run {
                     self.isCapturing = false
                 }
-            }
-        }
-    }
-
-    private func showPermissionAlert() {
-        let alert = NSAlert()
-        alert.messageText = "Screen Recording Permission Required"
-        alert.informativeText = "StickShot needs screen recording permission to capture screen regions. Please grant permission in System Settings > Privacy & Security > Screen Recording."
-        alert.alertStyle = .warning
-        alert.addButton(withTitle: "Open System Settings")
-        alert.addButton(withTitle: "Later")
-
-        let response = alert.runModal()
-        if response == .alertFirstButtonReturn {
-            if let url = URL(string: "x-apple.systempreferences:com.apple.preference.security?Privacy_ScreenCapture") {
-                NSWorkspace.shared.open(url)
             }
         }
     }
