@@ -53,6 +53,9 @@ cat > "$APP_BUNDLE/Contents/Info.plist" << 'EOF'
 </plist>
 EOF
 
+echo "Code signing (ad-hoc)..."
+/usr/bin/codesign --force --deep --sign - "$APP_BUNDLE"
+
 echo "Built: $APP_BUNDLE"
 echo ""
 echo "To install, run:"
