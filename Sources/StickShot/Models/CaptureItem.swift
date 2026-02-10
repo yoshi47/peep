@@ -11,6 +11,7 @@ final class CaptureItem: Identifiable, ObservableObject {
     @Published var scale: CGFloat
     @Published var opacity: CGFloat
     @Published var alwaysOnTop: Bool
+    @Published var visibleOnAllDesktops: Bool
     @Published var clickThroughLocked: Bool
     @Published var windowFrame: CGRect
     
@@ -35,6 +36,7 @@ final class CaptureItem: Identifiable, ObservableObject {
         self.scale = 1.0
         self.opacity = 1.0
         self.alwaysOnTop = true
+        self.visibleOnAllDesktops = true
         self.clickThroughLocked = false
         self.windowFrame = initialFrame
     }

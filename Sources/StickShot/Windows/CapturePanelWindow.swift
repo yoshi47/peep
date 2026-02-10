@@ -36,7 +36,9 @@ final class CapturePanelWindowController {
         panel.hasShadow = true
         panel.isMovableByWindowBackground = true
         panel.hidesOnDeactivate = false
-        panel.collectionBehavior = [.canJoinAllSpaces, .fullScreenAuxiliary]
+        panel.collectionBehavior = item.visibleOnAllDesktops
+            ? [.canJoinAllSpaces, .fullScreenAuxiliary]
+            : [.moveToActiveSpace, .fullScreenAuxiliary]
         panel.alphaValue = item.opacity
         
         // Prevent app from terminating when this panel closes
@@ -59,9 +61,21 @@ final class CapturePanelWindowController {
         let hosting = CapturePanelHostingView(rootView: view)
         hosting.frame = panel.contentView?.bounds ?? .zero
         hosting.autoresizingMask = [.width, .height]
-        hosting.onRightClick = { [weak panel] event in
-            guard let panel = panel else { return }
+        hosting.onRightClick = { [weak panel, weak self] event in
+            guard let panel = panel, let self = self else { return }
             let menu = NSMenu()
+
+            let allDesktopsItem = NSMenuItem(
+                title: "Show on All Desktops",
+                action: #selector(panel.toggleVisibleOnAllDesktopsAction),
+                keyEquivalent: ""
+            )
+            allDesktopsItem.target = panel
+            allDesktopsItem.state = self.item.visibleOnAllDesktops ? .on : .off
+            menu.addItem(allDesktopsItem)
+
+            menu.addItem(.separator())
+
             let saveItem = NSMenuItem(title: "Save Image...", action: #selector(panel.saveImageAction), keyEquivalent: "")
             saveItem.target = panel
             menu.addItem(saveItem)
@@ -92,6 +106,12 @@ final class CapturePanelWindowController {
         // Set up right-click save
         panel.onSaveImage = { [weak self] in
             self?.saveImage()
+        }
+
+        // Set up toggle visible on all desktops
+        panel.onToggleVisibleOnAllDesktops = { [weak self] in
+            guard let self = self else { return }
+            self.item.visibleOnAllDesktops.toggle()
         }
         
         self.window = panel
@@ -204,6 +224,15 @@ final class CapturePanelWindowController {
             }
             .store(in: &cancellables)
         
+        // Observe visibleOnAllDesktops changes
+        item.$visibleOnAllDesktops
+            .sink { [weak self] visible in
+                self?.window?.collectionBehavior = visible
+                    ? [.canJoinAllSpaces, .fullScreenAuxiliary]
+                    : [.moveToActiveSpace, .fullScreenAuxiliary]
+            }
+            .store(in: &cancellables)
+
         // Observe scale changes
         item.$scale
             .sink { [weak self] _ in
@@ -219,6 +248,7 @@ class CapturePanelNSPanel: NSPanel {
     var onScrollWheel: ((CGFloat) -> Void)?
     var onScrollWheelOpacity: ((CGFloat) -> Void)?
     var onSaveImage: (() -> Void)?
+    var onToggleVisibleOnAllDesktops: (() -> Void)?
     
     override var canBecomeKey: Bool { true }
     override var canBecomeMain: Bool { false }
@@ -262,6 +292,10 @@ class CapturePanelNSPanel: NSPanel {
     @objc func saveImageAction() {
         NSLog("[CapturePanelNSPanel] saveImageAction called")
         onSaveImage?()
+    }
+
+    @objc func toggleVisibleOnAllDesktopsAction() {
+        onToggleVisibleOnAllDesktops?()
     }
 }
 
