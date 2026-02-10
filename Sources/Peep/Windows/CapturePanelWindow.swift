@@ -169,7 +169,7 @@ final class CapturePanelWindowController {
         let formatter = DateFormatter()
         formatter.dateFormat = "yyyy-MM-dd_HH-mm-ss"
         let timestamp = formatter.string(from: item.capturedAt)
-        savePanel.nameFieldStringValue = "StickShot_\(timestamp).png"
+        savePanel.nameFieldStringValue = "Peep_\(timestamp).png"
         
         // Use beginSheetModal if we have a window, otherwise use begin
         if let window = self.window {

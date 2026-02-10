@@ -1,4 +1,4 @@
-# StickShot
+# Peep
 
 macOS用のスクリーンキャプチャアプリ。画面の任意範囲をキャプチャし、常駐ウィンドウとして表示できます。
 
@@ -20,7 +20,6 @@ macOS用のスクリーンキャプチャアプリ。画面の任意範囲をキ
 ### Swift Package Manager
 
 ```bash
-cd stickshot
 swift build
 ```
 
@@ -46,8 +45,8 @@ swift build
 ## プロジェクト構成
 
 ```
-Sources/StickShot/
-├── StickShotApp.swift           # アプリエントリーポイント
+Sources/Peep/
+├── PeepApp.swift                # アプリエントリーポイント
 ├── AppCoordinator.swift         # 全体連携
 ├── Models/
 │   └── CaptureItem.swift        # キャプチャデータモデル

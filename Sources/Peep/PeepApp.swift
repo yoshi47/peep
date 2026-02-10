@@ -3,7 +3,7 @@ import AppKit
 import ServiceManagement
 
 @main
-struct StickShotApp: App {
+struct PeepApp: App {
     @NSApplicationDelegateAdaptor(AppDelegate.self) var appDelegate
     
     var body: some Scene {
@@ -35,7 +35,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         statusItem = NSStatusBar.system.statusItem(withLength: NSStatusItem.variableLength)
         
         if let button = statusItem?.button {
-            button.image = NSImage(systemSymbolName: "camera.viewfinder", accessibilityDescription: "StickShot")
+            button.image = NSImage(systemSymbolName: "camera.viewfinder", accessibilityDescription: "Peep")
         }
         
         let menu = NSMenu()
@@ -63,7 +63,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         
         menu.addItem(NSMenuItem.separator())
         
-        let quitItem = NSMenuItem(title: "Quit StickShot", action: #selector(quitApp), keyEquivalent: "q")
+        let quitItem = NSMenuItem(title: "Quit Peep", action: #selector(quitApp), keyEquivalent: "q")
         quitItem.target = self
         menu.addItem(quitItem)
         
@@ -92,7 +92,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
                 sender.state = .on
             }
         } catch {
-            NSLog("[StickShot] Failed to toggle launch at login: \(error)")
+            NSLog("[Peep] Failed to toggle launch at login: \(error)")
         }
     }
 }

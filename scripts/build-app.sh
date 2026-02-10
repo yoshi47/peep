@@ -2,7 +2,7 @@
 set -e
 
 PROJECT_DIR="$(cd "$(dirname "$0")/.." && pwd)"
-APP_NAME="StickShot"
+APP_NAME="Peep"
 DIST_DIR="$PROJECT_DIR/dist"
 APP_BUNDLE="$DIST_DIR/$APP_NAME.app"
 
@@ -26,11 +26,11 @@ cat > "$APP_BUNDLE/Contents/Info.plist" << 'EOF'
 <plist version="1.0">
 <dict>
     <key>CFBundleName</key>
-    <string>StickShot</string>
+    <string>Peep</string>
     <key>CFBundleDisplayName</key>
-    <string>StickShot</string>
+    <string>Peep</string>
     <key>CFBundleIdentifier</key>
-    <string>com.stickshot.app</string>
+    <string>com.peep.app</string>
     <key>CFBundleVersion</key>
     <string>1.0.0</string>
     <key>CFBundleShortVersionString</key>
@@ -38,7 +38,7 @@ cat > "$APP_BUNDLE/Contents/Info.plist" << 'EOF'
     <key>CFBundlePackageType</key>
     <string>APPL</string>
     <key>CFBundleExecutable</key>
-    <string>StickShot</string>
+    <string>Peep</string>
     <key>CFBundleIconFile</key>
     <string>AppIcon</string>
     <key>LSMinimumSystemVersion</key>
@@ -48,7 +48,7 @@ cat > "$APP_BUNDLE/Contents/Info.plist" << 'EOF'
     <key>NSHighResolutionCapable</key>
     <true/>
     <key>NSScreenCaptureUsageDescription</key>
-    <string>StickShot needs screen recording permission to capture screen regions.</string>
+    <string>Peep needs screen recording permission to capture screen regions.</string>
 </dict>
 </plist>
 EOF

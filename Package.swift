@@ -2,17 +2,17 @@
 import PackageDescription
 
 let package = Package(
-    name: "StickShot",
+    name: "Peep",
     platforms: [
         .macOS(.v13)
     ],
     products: [
-        .executable(name: "StickShot", targets: ["StickShot"])
+        .executable(name: "Peep", targets: ["Peep"])
     ],
     targets: [
         .executableTarget(
-            name: "StickShot",
-            path: "Sources/StickShot"
+            name: "Peep",
+            path: "Sources/Peep"
         )
     ]
 )
