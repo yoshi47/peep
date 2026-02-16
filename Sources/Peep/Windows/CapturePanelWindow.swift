@@ -76,6 +76,14 @@ final class CapturePanelWindowController {
 
             menu.addItem(.separator())
 
+            let copyItem = NSMenuItem(
+                title: "Copy to Clipboard",
+                action: #selector(panel.copyImageAction),
+                keyEquivalent: ""
+            )
+            copyItem.target = panel
+            menu.addItem(copyItem)
+
             let saveItem = NSMenuItem(title: "Save Image...", action: #selector(panel.saveImageAction), keyEquivalent: "")
             saveItem.target = panel
             menu.addItem(saveItem)
@@ -113,7 +121,13 @@ final class CapturePanelWindowController {
             guard let self = self else { return }
             self.item.visibleOnAllDesktops.toggle()
         }
-        
+
+        // Set up copy to clipboard
+        panel.onCopyImage = { [weak self] in
+            guard let self = self else { return }
+            ClipboardService.shared.copyImage(self.item.image)
+        }
+
         self.window = panel
         self.hostingView = hosting
         
@@ -249,6 +263,7 @@ class CapturePanelNSPanel: NSPanel {
     var onScrollWheelOpacity: ((CGFloat) -> Void)?
     var onSaveImage: (() -> Void)?
     var onToggleVisibleOnAllDesktops: (() -> Void)?
+    var onCopyImage: (() -> Void)?
     
     override var canBecomeKey: Bool { true }
     override var canBecomeMain: Bool { false }
@@ -296,6 +311,10 @@ class CapturePanelNSPanel: NSPanel {
 
     @objc func toggleVisibleOnAllDesktopsAction() {
         onToggleVisibleOnAllDesktops?()
+    }
+
+    @objc func copyImageAction() {
+        onCopyImage?()
     }
 }
 
