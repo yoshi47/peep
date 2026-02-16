@@ -55,6 +55,15 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         launchAtLoginItem.state = SMAppService.mainApp.status == .enabled ? .on : .off
         menu.addItem(launchAtLoginItem)
 
+        let autoCopyItem = NSMenuItem(
+            title: "Auto Copy to Clipboard",
+            action: #selector(toggleAutoCopyToClipboard),
+            keyEquivalent: ""
+        )
+        autoCopyItem.target = self
+        autoCopyItem.state = SettingsManager.shared.autoCopyToClipboard ? .on : .off
+        menu.addItem(autoCopyItem)
+
         menu.addItem(NSMenuItem.separator())
 
         let closeAllItem = NSMenuItem(title: "Close All Captures", action: #selector(closeAllCaptures), keyEquivalent: "")
@@ -94,5 +103,11 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         } catch {
             NSLog("[Peep] Failed to toggle launch at login: \(error)")
         }
+    }
+
+    @objc private func toggleAutoCopyToClipboard(_ sender: NSMenuItem) {
+        SettingsManager.shared.autoCopyToClipboard.toggle()
+        sender.state = SettingsManager.shared.autoCopyToClipboard ? .on : .off
+        NSLog("[Peep] Auto copy to clipboard: \(SettingsManager.shared.autoCopyToClipboard)")
     }
 }

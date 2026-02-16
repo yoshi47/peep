@@ -64,6 +64,13 @@ final class AppCoordinator {
                 do {
                     let image = try await CaptureService.shared.captureRegion(rect: rect, screen: screen)
 
+                    // 自動クリップボードコピー
+                    if SettingsManager.shared.autoCopyToClipboard {
+                        _ = await MainActor.run {
+                            ClipboardService.shared.copyImage(image)
+                        }
+                    }
+
                     await MainActor.run {
                         let item = CaptureItem(
                             image: image,
