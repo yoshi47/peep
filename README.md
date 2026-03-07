@@ -1,71 +1,96 @@
 # Peep
 
-macOS用のスクリーンキャプチャアプリ。画面の任意範囲をキャプチャし、常駐ウィンドウとして表示できます。
+A lightweight floating screen capture tool for macOS.
 
-## 機能
+Capture any region of your screen and keep it as a floating panel — always on top, across all desktops.
 
-- **範囲選択キャプチャ**: ホットキー（⌥⌘P）で範囲選択モードを起動し、ドラッグで範囲を選択
-- **貼り付け表示**: キャプチャ画像を独立したウィンドウとして表示
-- **複数枚同時表示**: 複数のキャプチャを同時に画面上に保持
-- **拡大・縮小**: スクロールホイールまたはピンチジェスチャーでズーム（25%〜400%）
-- **透明度変更**: スライダーで透明度を調整（20%〜100%）
+## Features
 
-## 動作環境
+- Region capture with global hotkey (⌥⌘P)
+- Floating panels — always on top, visible on all desktops
+- Zoom 25%–400% via scroll wheel, pinch, or buttons
+- Opacity 20%–100% via ⌘+scroll or slider
+- Auto copy to clipboard
+- Save as PNG via right-click menu
+- Multiple captures simultaneously
+- Launch at login
+- Multi-monitor support
 
-- macOS 13.0以上
-- 画面収録の権限が必要
+## Installation
 
-## ビルド方法
+### Download
 
-### Swift Package Manager
+1. Go to [GitHub Releases](../../releases) and download the latest `.zip`
+2. Unzip and move `Peep.app` to `/Applications`
+3. Open the app — a menu bar icon will appear
 
-```bash
-swift build
-```
+### Requirements
 
-### Xcode
+- macOS 13.0+
+- Screen Recording permission (see [Permissions](#permissions))
 
-1. `Package.swift`をXcodeで開く
-2. ビルドターゲットを選択してビルド
+## Usage
 
-## 使い方
+1. Press **⌥⌘P** (or click the menu bar icon → **Capture Region**)
+2. Drag to select a region (press **ESC** to cancel)
+3. The captured area appears as a floating panel
 
-1. アプリを起動（メニューバーにアイコンが表示されます）
-2. `⌥⌘P`（Option + Command + P）を押すか、メニューバーアイコンから「Capture Region」を選択
-3. ドラッグして範囲を選択（ESCでキャンセル）
-4. キャプチャ画像がウィンドウとして表示されます
+### Panel Controls
 
-### パネル操作
+- **Move** — drag the panel
+- **Zoom** — scroll wheel or pinch gesture
+- **Opacity** — ⌘+scroll or hover to reveal the slider
+- **Close** — double-click, ESC, Delete, or the × button
 
-- **移動**: ウィンドウをドラッグ
-- **拡大・縮小**: スクロールホイールまたはピンチジェスチャー
-- **透明度変更**: ホバー時に表示されるスライダーで調整
-- **閉じる**: ダブルクリック、ESCキー、または×ボタン
+## Keyboard Shortcuts & Controls
 
-## プロジェクト構成
+### Global
 
-```
-Sources/Peep/
-├── PeepApp.swift                # アプリエントリーポイント
-├── AppCoordinator.swift         # 全体連携
-├── Models/
-│   └── CaptureItem.swift        # キャプチャデータモデル
-├── Services/
-│   ├── CaptureService.swift     # ScreenCaptureKit連携
-│   └── HotkeyService.swift      # グローバルホットキー
-├── Views/
-│   ├── SelectionOverlayView.swift    # 範囲選択UI
-│   └── CapturePanelView.swift        # パネルUI
-└── Windows/
-    ├── SelectionOverlayWindow.swift  # 範囲選択Window
-    ├── CapturePanelWindow.swift      # パネルWindow
-    └── PanelManager.swift            # パネル管理
-```
+| Shortcut | Action |
+|----------|--------|
+| ⌥⌘P | Capture region |
+| ⌘Q | Quit Peep |
 
-## 権限
+### Panel
 
-初回起動時に「画面収録」の権限を求められます。システム設定 > プライバシーとセキュリティ > 画面収録 で許可してください。
+| Input | Action |
+|-------|--------|
+| Scroll wheel | Zoom in / out |
+| Pinch gesture | Zoom in / out |
+| ⌘ + Scroll wheel | Adjust opacity |
+| Double-click | Close panel |
+| ESC / Delete | Close panel |
 
-## ライセンス
+### Right-Click Menu
+
+| Item | Action |
+|------|--------|
+| Show on All Desktops | Toggle panel visibility across desktops |
+| Copy to Clipboard | Copy the capture image |
+| Save Image... | Save as PNG |
+
+## Menu Bar Items
+
+| Item | Description |
+|------|-------------|
+| Capture Region (⌥⌘P) | Start a new capture |
+| Launch at Login | Toggle auto-start on login |
+| Auto Copy to Clipboard | Toggle automatic clipboard copy after capture |
+| Bring All to Front | Bring all capture panels to the front |
+| Send All to Back | Send all capture panels behind other windows |
+| Close All Captures | Close every open capture panel |
+| Quit Peep (⌘Q) | Quit the application |
+
+## Permissions
+
+Peep requires **Screen Recording** permission to capture your screen.
+
+On first launch, macOS will prompt you to grant access. If you need to enable it manually:
+
+1. Open **System Settings** → **Privacy & Security** → **Screen Recording**
+2. Enable **Peep**
+3. Restart the app if needed
+
+## License
 
 MIT License
