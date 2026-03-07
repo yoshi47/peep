@@ -51,5 +51,12 @@ final class PanelManager {
     func hasPanel(id: UUID) -> Bool {
         panels[id] != nil
     }
+
+    /// Set alwaysOnTop for all active panels
+    func setAllAlwaysOnTop(_ enabled: Bool) {
+        for (_, controller) in panels {
+            controller.item.alwaysOnTop = enabled
+        }
+    }
 }
 

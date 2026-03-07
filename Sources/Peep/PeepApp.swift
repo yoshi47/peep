@@ -66,6 +66,16 @@ class AppDelegate: NSObject, NSApplicationDelegate {
 
         menu.addItem(NSMenuItem.separator())
 
+        let bringAllItem = NSMenuItem(title: "Bring All to Front", action: #selector(bringAllToFront), keyEquivalent: "")
+        bringAllItem.target = self
+        menu.addItem(bringAllItem)
+
+        let sendAllItem = NSMenuItem(title: "Send All to Back", action: #selector(sendAllToBack), keyEquivalent: "")
+        sendAllItem.target = self
+        menu.addItem(sendAllItem)
+
+        menu.addItem(NSMenuItem.separator())
+
         let closeAllItem = NSMenuItem(title: "Close All Captures", action: #selector(closeAllCaptures), keyEquivalent: "")
         closeAllItem.target = self
         menu.addItem(closeAllItem)
@@ -103,6 +113,14 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         } catch {
             NSLog("[Peep] Failed to toggle launch at login: \(error)")
         }
+    }
+
+    @objc private func bringAllToFront() {
+        PanelManager.shared.setAllAlwaysOnTop(true)
+    }
+
+    @objc private func sendAllToBack() {
+        PanelManager.shared.setAllAlwaysOnTop(false)
     }
 
     @objc private func toggleAutoCopyToClipboard(_ sender: NSMenuItem) {
