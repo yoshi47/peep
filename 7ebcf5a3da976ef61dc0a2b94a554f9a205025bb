@@ -1,0 +1,23 @@
+.github/workflows/release.yml
+  23e32fd962e8c384 1-26
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.1.8",
+  "base_commit_sha": "7ebcf5a3da976ef61dc0a2b94a554f9a205025bb",
+  "prompts": {
+    "23e32fd962e8c384": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "acdbdc4b-8dea-4068-9f77-16338e704638",
+        "model": "claude-opus-4-6"
+      },
+      "human_author": "yoshi47 <yoshix47@gmail.com>",
+      "messages": [],
+      "total_additions": 26,
+      "total_deletions": 0,
+      "accepted_lines": 26,
+      "overriden_lines": 0
+    }
+  }
+}
