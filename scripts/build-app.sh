@@ -19,6 +19,11 @@ mkdir -p "$APP_BUNDLE/Contents/Resources"
 # Copy executable
 cp "$PROJECT_DIR/.build/release/$APP_NAME" "$APP_BUNDLE/Contents/MacOS/"
 
+# Copy resources
+if [ -d "$PROJECT_DIR/Sources/Peep/Resources" ]; then
+    cp -R "$PROJECT_DIR/Sources/Peep/Resources/"* "$APP_BUNDLE/Contents/Resources/"
+fi
+
 # Create Info.plist
 cat > "$APP_BUNDLE/Contents/Info.plist" << 'EOF'
 <?xml version="1.0" encoding="UTF-8"?>
