@@ -37,6 +37,7 @@ Temporary Items
 *.swiftdoc
 
 # Build artifacts
+dist/
 DerivedData/
 *.dSYM.zip
 *.dSYM
