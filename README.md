@@ -1,8 +1,13 @@
-# Peep
+<p align="center">
+  <img src="assets/icon.png" alt="Peep" width="128">
+</p>
 
-A lightweight floating screen capture tool for macOS.
+<h1 align="center">Peep</h1>
 
-Capture any region of your screen and keep it as a floating panel — always on top, across all desktops.
+<p align="center">
+  A lightweight floating screen capture tool for macOS.<br>
+  Capture any region of your screen and keep it as a floating panel — always on top, across all desktops.
+</p>
 
 ## Features
 
